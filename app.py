@@ -18,6 +18,7 @@ COL = {
     "phi_sau_vat":  36,  # Phí sau VAT (phí năm trước)
     "so_vu":        37,  # Số vụ tổn thất
     "so_tien_bt":   38,  # Số tiền bồi thường
+    "ty_le_tt":     39,  # Tỷ lệ tổn thất
     # Gói Bạc (col 41-45)
     "bac_ti_le":    41,
     "bac_phi_truoc":42,
@@ -36,8 +37,8 @@ COL = {
     "bk_giam_phi":  53,
     "bk_ti_le_giam":54,
     "bk_phi_sau":   55,
-    # Giá trị xe năm nay
-    "gtxe_nam_nay": 56,
+    # Giá trị xe Min (col 57 = BF)
+    "gtxe_nam_nay": 57,
 }
 
 # Màu sắc
@@ -102,7 +103,7 @@ def build_output_xlsx(df_input):
         ws = wb.create_sheet(title=sheet_name)
 
         # ── ROW 1: Tiêu đề bảng ─────────────────────────────────────────────
-        ws.merge_cells("A1:O1")
+        ws.merge_cells("A1:P1")
         c = ws["A1"]
         c.value   = f"BẢNG BÁO PHÍ BẢO HIỂM - {str(dai_ly).upper()}"
         c.font    = Font(name="Arial", bold=True, size=13, color="FFFFFF")
@@ -127,20 +128,21 @@ def build_output_xlsx(df_input):
             apply_cell(ws, 2, col_idx, label, FONT_HEADER, fill(COLOR_HEADER_SUB),
                        ALIGN_CENTER, BORDER_THIN)
 
-        # Nhóm "Tỉ lệ bồi thường năm trước" (col 9-10, merge ngang)
-        ws.merge_cells(start_row=2, start_column=9, end_row=2, end_column=10)
+        # Nhóm "Tỉ lệ bồi thường năm trước" (col 9-11, merge ngang)
+        ws.merge_cells(start_row=2, start_column=9, end_row=2, end_column=11)
         apply_cell(ws, 2, 9, "Tỉ lệ bồi thường năm trước",
                    FONT_HEADER, fill(COLOR_HEADER_SUB), ALIGN_CENTER, BORDER_THIN)
-        apply_cell(ws, 3, 9,  "Số vụ TT",     FONT_HEADER, fill(COLOR_HEADER_SUB), ALIGN_CENTER, BORDER_THIN)
-        apply_cell(ws, 3, 10, "Số tiền BT",   FONT_HEADER, fill(COLOR_HEADER_SUB), ALIGN_CENTER, BORDER_THIN)
+        apply_cell(ws, 3, 9,  "Số vụ TT",          FONT_HEADER, fill(COLOR_HEADER_SUB), ALIGN_CENTER, BORDER_THIN)
+        apply_cell(ws, 3, 10, "Số tiền BT",         FONT_HEADER, fill(COLOR_HEADER_SUB), ALIGN_CENTER, BORDER_THIN)
+        apply_cell(ws, 3, 11, "Tỷ lệ tổn thất (%)", FONT_HEADER, fill(COLOR_HEADER_SUB), ALIGN_CENTER, BORDER_THIN)
 
-        # Nhóm "Phí Tái Tục Năm Nay" (col 11-15, merge ngang)
-        ws.merge_cells(start_row=2, start_column=11, end_row=2, end_column=15)
-        apply_cell(ws, 2, 11, "Phí Tái Tục Năm Nay",
+        # Nhóm "Phí Tái Tục Năm Nay" (col 12-16, merge ngang)
+        ws.merge_cells(start_row=2, start_column=12, end_row=2, end_column=16)
+        apply_cell(ws, 2, 12, "Phí Tái Tục Năm Nay",
                    FONT_HEADER, fill(COLOR_HEADER_SUB), ALIGN_CENTER, BORDER_THIN)
         sub_headers = ["Giá trị xe", "Tỉ lệ phí (%)", "Tỷ lệ giảm (%)", "Phí năm nay", "Phí sau giảm"]
         for i, h in enumerate(sub_headers):
-            apply_cell(ws, 3, 11 + i, h, FONT_HEADER, fill(COLOR_HEADER_SUB),
+            apply_cell(ws, 3, 12 + i, h, FONT_HEADER, fill(COLOR_HEADER_SUB),
                        ALIGN_CENTER, BORDER_THIN)
 
         # ── ROW 4+: Data ──────────────────────────────────────────────────────
@@ -177,21 +179,24 @@ def build_output_xlsx(df_input):
                 phi_sau    = safe(row[COL["bac_phi_sau"]])
 
             cells_data = [
-                (1,  r_idx + 1,                        FONT_DATA, ALIGN_CENTER, None),
-                (2,  safe(row[COL["so_gcn"]]),          FONT_DATA, ALIGN_LEFT,   None),
-                (3,  fmt_date(row[COL["hieu_luc_den"]]),FONT_DATA, ALIGN_CENTER, None),
-                (4,  safe(row[COL["chi_nhanh"]]),       FONT_DATA, ALIGN_LEFT,   None),
-                (5,  safe(row[COL["ten_kh"]]),          FONT_DATA, ALIGN_LEFT,   None),
-                (6,  safe(row[COL["bien_xe"]]),         FONT_DATA, ALIGN_CENTER, None),
-                (7,  safe(row[COL["ten_goi"]]),         FONT_DATA, ALIGN_CENTER, None),
-                (8,  safe(row[COL["phi_sau_vat"]]),     FONT_DATA, ALIGN_RIGHT,  FMT_NUMBER),
-                (9,  safe(row[COL["so_vu"]]),           FONT_DATA, ALIGN_CENTER, None),
-                (10, safe(row[COL["so_tien_bt"]]),      FONT_DATA, ALIGN_RIGHT,  FMT_NUMBER),
-                (11, safe(row[COL["gtxe_nam_nay"]]),    FONT_DATA, ALIGN_RIGHT,  FMT_NUMBER),
-                (12, ti_le_phi,                         FONT_DATA, ALIGN_CENTER, '0.00'),
-                (13, ti_le_giam,                        FONT_DATA, ALIGN_CENTER, '0.00'),
-                (14, phi_truoc,                         FONT_DATA, ALIGN_RIGHT,  FMT_NUMBER),
-                (15, phi_sau,                           FONT_BOLD, ALIGN_RIGHT,  FMT_NUMBER),
+                (1,  r_idx + 1,                         FONT_DATA, ALIGN_CENTER, None),
+                (2,  safe(row[COL["so_gcn"]]),           FONT_DATA, ALIGN_LEFT,   None),
+                (3,  fmt_date(row[COL["hieu_luc_den"]]), FONT_DATA, ALIGN_CENTER, None),
+                (4,  safe(row[COL["chi_nhanh"]]),        FONT_DATA, ALIGN_LEFT,   None),
+                (5,  safe(row[COL["ten_kh"]]),           FONT_DATA, ALIGN_LEFT,   None),
+                (6,  safe(row[COL["bien_xe"]]),          FONT_DATA, ALIGN_CENTER, None),
+                (7,  safe(row[COL["ten_goi"]]),          FONT_DATA, ALIGN_CENTER, None),
+                (8,  safe(row[COL["phi_sau_vat"]]),      FONT_DATA, ALIGN_RIGHT,  FMT_NUMBER),
+                (9,  safe(row[COL["so_vu"]]),            FONT_DATA, ALIGN_CENTER, None),
+                (10, safe(row[COL["so_tien_bt"]]),       FONT_DATA, ALIGN_RIGHT,  FMT_NUMBER),
+                (11, safe(row[COL["ty_le_tt"]]),         FONT_DATA, ALIGN_CENTER, '0.00'),
+                (12, safe(row[COL["gtxe_nam_nay"]]),     FONT_DATA, ALIGN_RIGHT,  FMT_NUMBER),
+                (13, ti_le_phi,                          FONT_DATA, ALIGN_CENTER, '0.00'),
+                (14, ti_le_giam,                         FONT_DATA, ALIGN_CENTER, '0.00'),
+                # Cột O: công thức = Giá trị xe (L) * Tỉ lệ phí (M) / 100
+                (15, f"=L{excel_row}*M{excel_row}/100",  FONT_DATA, ALIGN_RIGHT,  FMT_NUMBER),
+                # Cột P: công thức = Phí năm nay (O) * (100 - Tỷ lệ giảm (N)) / 100
+                (16, f"=O{excel_row}*(100-N{excel_row})/100", FONT_BOLD, ALIGN_RIGHT, FMT_NUMBER),
             ]
 
             for col_idx, value, font, align, fmt in cells_data:
@@ -199,7 +204,7 @@ def build_output_xlsx(df_input):
                                row_fill, align, BORDER_THIN, fmt)
 
         # ── Độ rộng cột ──────────────────────────────────────────────────────
-        col_widths = [5, 24, 14, 16, 22, 12, 12, 14, 10, 18, 16, 12, 14, 16, 16]
+        col_widths = [5, 24, 14, 16, 22, 12, 12, 14, 10, 18, 12, 16, 12, 14, 16, 16]
         for i, w in enumerate(col_widths, 1):
             ws.column_dimensions[get_column_letter(i)].width = w
 
@@ -292,4 +297,4 @@ if uploaded_file is not None:
             st.exception(e)
 
 st.markdown("---")
-st.caption("v1.0 · TTISV Internal Tool")
+st.caption("v1.1 · TTISV Internal Tool")
